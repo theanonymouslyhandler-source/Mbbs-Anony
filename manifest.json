@@ -2,7 +2,7 @@
   "name": "MBBS ANONY",
   "short_name": "MBBS Anony",
   "description": "Anonymous MBBS Whisper Archive",
-  "start_url": "/index.html",
+  "start_url": "/view.html",
   "display": "standalone",
   "background_color": "#0a0a0f",
   "theme_color": "#4a9eff",

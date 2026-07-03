@@ -82,7 +82,7 @@
             overflow: hidden;
             margin-bottom: 2.5rem;
             box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.3);
-            min-height: 520px; /* Ensures same height as image cards */
+            min-height: 520px;
             display: flex;
             flex-direction: column;
         }
@@ -102,7 +102,6 @@
             justify-content: center;
         }
         
-        /* Text-only cards get more breathing room */
         .message-card.text-only .message-content {
             padding: 2.5rem 1.5rem;
         }
@@ -220,6 +219,8 @@
         const VALID_USERNAME = "admin";
         const VALID_PASSWORD = "mbbs123";
 
+        let unsubscribe = null;
+
         function attemptLogin() {
             const user = document.getElementById('username').value.trim();
             const pass = document.getElementById('password').value.trim();
@@ -235,33 +236,41 @@
             }
         }
 
-        async function loadMessages() {
+        function loadMessages() {
             const container = document.getElementById('messagesContainer');
             container.innerHTML = '<div style="text-align:center; padding:4rem;">Loading whispers...</div>';
             
+            // Unsubscribe from previous listener if exists
+            if (unsubscribe) {
+                unsubscribe();
+            }
+            
             try {
-                const snapshot = await db.collection('messages')
+                unsubscribe = db.collection('messages')
                     .orderBy('timestamp', 'desc')
                     .limit(30)
-                    .get();
-                
-                container.innerHTML = '';
-                
-                if (snapshot.empty) {
-                    container.innerHTML = `
-                        <div class="empty">
-                            <h2 style="font-size: 2rem; margin-bottom: 1rem;">No messages yet</h2>
-                            <p>The void is quiet.</p>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    const card = createMessageCard(data);
-                    container.appendChild(card);
-                });
+                    .onSnapshot(snapshot => {
+                        container.innerHTML = '';
+                        
+                        if (snapshot.empty) {
+                            container.innerHTML = `
+                                <div class="empty">
+                                    <h2 style="font-size: 2rem; margin-bottom: 1rem;">No messages yet</h2>
+                                    <p>The void is quiet.</p>
+                                </div>
+                            `;
+                            return;
+                        }
+                        
+                        snapshot.forEach(doc => {
+                            const data = doc.data();
+                            const card = createMessageCard(data);
+                            container.appendChild(card);
+                        });
+                    }, error => {
+                        console.error("Snapshot error:", error);
+                        container.innerHTML = `<div style="text-align:center; padding:4rem; color:#f87171;">Failed to load messages: ${error.message}</div>`;
+                    });
                 
             } catch (e) {
                 console.error(e);
@@ -275,7 +284,6 @@
             
             let html = '';
             
-            // Show image ONLY if it exists
             if (data.images && data.images.length > 0) {
                 html += `<img src="${data.images[0]}" class="message-image" onclick="showImage('${data.images[0]}')">`;
             } else {

@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBBS Anony</title>
+    <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
+        
+        :root {
+            --glass: rgba(255, 255, 255, 0.09);
+            --glass-border: rgba(255, 255, 255, 0.18);
+            --accent: #4a9eff;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', system_ui, sans-serif;
+            background: radial-gradient(circle at 50% 30%, #1a1a2e 0%, #0f0f1a 100%);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .nav {
+            position: fixed; top: 0; left: 0; right: 0;
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            background: rgba(10,10,15,0.75);
+            backdrop-filter: blur(20px);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: white;
+        }
+        
+        .logo img { 
+            width: 48px; 
+            height: 48px; 
+            border-radius: 14px; 
+            object-fit: cover; 
+            box-shadow: 0 8px 25px rgba(74, 158, 255, 0.4); 
+        }
+
+        .hamburger {
+            width: 36px; 
+            height: 36px;
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-around;
+            cursor: pointer;
+        }
+        .hamburger span { 
+            width: 100%; 
+            height: 3.5px; 
+            background: white; 
+            border-radius: 3px; 
+        }
+
+        /* Slide Menu */
+        .menu-modal {
+            position: fixed; 
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            display: none; 
+            z-index: 2000;
+        }
+        .menu-panel {
+            position: fixed; 
+            top: 0; 
+            right: -100%;
+            width: 85%; 
+            max-width: 400px; 
+            height: 100vh;
+            background: rgba(15,15,25,0.98);
+            backdrop-filter: blur(30px);
+            border-left: 1px solid var(--glass-border);
+            transition: right 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+        }
+        .menu-modal.open .menu-panel { right: 0; }
+
+        .menu-content {
+            padding: 2rem 1.8rem;
+            height: 100%;
+            overflow-y: auto;
+        }
+        
+        .menu-content a {
+            display: block;
+            padding: 1.2rem 1rem;
+            color: #ddd;
+            text-decoration: none;
+            font-size: 1.15rem;
+            border-radius: 16px;
+            margin-bottom: 8px;
+            transition: all 0.3s;
+        }
+        .menu-content a:hover {
+            background: rgba(255,255,255,0.12);
+            color: white;
+        }
+
+        /* Info Modals */
+        .info-modal {
+            position: fixed; 
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2500;
+            padding: 1rem;
+        }
+        .info-content {
+            background: rgba(15,15,25,0.98);
+            backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+            max-width: 460px;
+            width: 100%;
+            padding: 2.5rem 2rem;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        /* Hero */
+        .hero { 
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            text-align: center; 
+            position: relative; 
+            padding: 2rem 1.5rem;
+        }
+        
+        .hero::before {
+            content: ''; 
+            position: absolute; 
+            inset: 0;
+            background: url('https://raw.githubusercontent.com/theanonymouslyhandler-source/Image/ec6f2d03046ae0b3bc58d141ac35c6cf813b5abf/The%20Anonymous%20Handler%20-%202.png') center/cover;
+            filter: brightness(0.45) blur(3px); 
+            z-index: -1;
+        }
+        
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2.7rem, 9vw, 4.8rem);
+            line-height: 1.05;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, #fff, #a5d0ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .tagline { 
+            font-size: 1.3rem; 
+            max-width: 460px; 
+            opacity: 0.9; 
+            margin-bottom: 3rem;
+        }
+
+        /* Floating Action Button */
+        .fab {
+            position: fixed; 
+            bottom: 30px; 
+            left: 50%; 
+            transform: translateX(-50%);
+            background: linear-gradient(90deg, #4a9eff, #60a5fa);
+            color: white; 
+            width: 72px; 
+            height: 72px; 
+            border-radius: 50%;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            font-size: 2.2rem; 
+            box-shadow: 0 15px 35px rgba(74, 158, 255, 0.45);
+            z-index: 100;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .fab:hover {
+            transform: translateX(-50%) scale(1.08);
+        }
+
+        /* Composer Bottom Sheet */
+        .composer-sheet {
+            position: fixed;
+            bottom: -100%;
+            left: 0;
+            right: 0;
+            background: rgba(15, 15, 25, 0.97);
+            backdrop-filter: blur(30px);
+            border-top: 1px solid var(--glass-border);
+            border-radius: 28px 28px 0 0;
+            padding: 1.5rem 1.5rem 2rem;
+            z-index: 1500;
+            max-height: 85vh;
+            overflow-y: auto;
+            transition: bottom 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6);
+        }
+        
+        .composer-sheet.open {
+            bottom: 0;
+        }
+        
+        .sheet-handle {
+            width: 48px;
+            height: 5px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 999px;
+            margin: 0 auto 1.5rem;
+        }
+        
+        .glass-panel {
+            background: var(--glass);
+            backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+            padding: 1.8rem;
+        }
+        
+        .message-input {
+            width: 100%; 
+            min-height: 160px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 1.4rem;
+            color: #fff;
+            font-size: 1.1rem;
+            resize: none;
+            outline: none;
+            transition: all 0.3s;
+        }
+        
+        .message-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(74, 158, 255, 0.25);
+        }
+        
+        .composer-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 1.2rem;
+        }
+        
+        .attachments { 
+            display: flex; 
+            gap: 12px; 
+            flex-wrap: wrap; 
+            margin-top: 1rem; 
+        }
+        
+        .preview {
+            position: relative;
+            width: 110px;
+            height: 110px;
+            border-radius: 18px;
+            overflow: hidden;
+            border: 2px solid rgba(255,255,255,0.25);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        
+        .preview img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+        }
+        
+        .preview-remove {
+            position: absolute; 
+            top: -8px; 
+            right: -8px;
+            width: 28px; 
+            height: 28px;
+            background: #ef4444;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        
+        .btn {
+            padding: 14px 28px;
+            border-radius: 9999px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+        }
+        
+        .btn-attach {
+            width: 56px; 
+            height: 56px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.25);
+            color: #fff;
+            font-size: 28px;
+            border-radius: 50%;
+        }
+        
+        .btn-send {
+            background: linear-gradient(90deg, #4a9eff, #60a5fa);
+            color: white;
+            font-size: 1.1rem;
+            min-width: 160px;
+        }
+        
+        .btn-send:disabled { 
+            opacity: 0.5; 
+            cursor: not-allowed; 
+        }
+        
+        .counter { 
+            font-size: 0.95rem; 
+            opacity: 0.75; 
+        }
+
+        /* Toasts */
+        .success-toast, .toast {
+            position: fixed; 
+            bottom: 100px; 
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 16px 32px;
+            border-radius: 9999px;
+            z-index: 3000;
+            animation: toastPop 0.4s ease;
+        }
+        .success-toast { background: rgba(16, 185, 129, 0.95); }
+        .toast { background: rgba(239, 68, 68, 0.95); }
+        
+        @keyframes toastPop {
+            from { transform: translate(-50%, 30px); opacity: 0; }
+            to { transform: translateX(-50%); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav">
+        <a href="#" class="logo">
+            <img src="logo.png" alt="MBBS Anony">
+            <span style="font-weight: 600;">MBBS ANONY</span>
+        </a>
+        <div class="hamburger" id="hamburger">
+            <span></span><span></span><span></span>
+        </div>
+    </nav>
+
+    <!-- Main Menu -->
+    <div id="menuModal" class="menu-modal" onclick="if(event.target === this) hideMenu()">
+        <div class="menu-panel" onclick="event.stopImmediatePropagation()">
+            <div class="menu-content">
+                <h2 style="text-align:center; margin-bottom: 2rem;">Menu</h2>
+                <a href="#" onclick="showAbout(); hideMenu()">About</a>
+                <a href="#" onclick="showContactInfo(); hideMenu()">Contact</a>
+                <a href="#" onclick="showSupportInfo(); hideMenu()">Support</a>
+                <a href="#" onclick="showTerms(); hideMenu()">Terms & Conditions</a>
+                
+                <button onclick="hideMenu()" style="width:100%; margin-top: 2.5rem; padding: 16px; background: rgba(255,255,255,0.1); border: none; border-radius: 9999px; color: white; font-size: 1.1rem;">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- About Modal -->
+    <div id="aboutModal" class="info-modal" onclick="if(event.target === this) hideAbout()">
+        <div class="info-content" onclick="event.stopImmediatePropagation()">
+            <h2>About MBBS Anony</h2>
+            <p style="margin: 1.5rem 0; line-height: 1.7; opacity: 0.9;">
+                MBBS Anony is a private, anonymous space created for medical students. 
+                Share your thoughts, struggles, funny moments, or concerns without revealing your identity.
+                <br><br>
+                This platform is built to foster honest conversations within the MBBS community.
+            </p>
+            <button onclick="hideAbout()" style="width:100%; padding:16px; background:#4a9eff; border:none; border-radius:9999px; color:white; font-weight:600;">Close</button>
+        </div>
+    </div>
+
+    <!-- Contact Modal -->
+    <div id="contactModal" class="info-modal" onclick="if(event.target === this) hideContact()">
+        <div class="info-content" onclick="event.stopImmediatePropagation()">
+            <h2>Contact Us</h2>
+            <p style="margin: 1.5rem 0; line-height: 1.7; opacity: 0.9;">
+                For general inquiries, suggestions, or partnership:<br><br>
+                <strong>Email:</strong> the.anonymously.handler@gmail.com<br><br>
+                We usually respond within 48 hours.
+            </p>
+            <button onclick="hideContact()" style="width:100%; padding:16px; background:#4a9eff; border:none; border-radius:9999px; color:white; font-weight:600;">Close</button>
+        </div>
+    </div>
+
+    <!-- Support Modal -->
+    <div id="supportModal" class="info-modal" onclick="if(event.target === this) hideSupport()">
+        <div class="info-content" onclick="event.stopImmediatePropagation()">
+            <h2>Support</h2>
+            <p style="margin: 1.5rem 0; line-height: 1.7; opacity: 0.9;">
+                Having issues with the app?<br><br>
+                • Messages not sending?<br>
+                • Image upload problems?<br>
+                • Want a new feature?<br><br>
+                <strong>Email:</strong> the.anonymously.handler@gmail.com<br><br>
+                Your feedback helps us improve the platform.
+            </p>
+            <button onclick="hideSupport()" style="width:100%; padding:16px; background:#4a9eff; border:none; border-radius:9999px; color:white; font-weight:600;">Close</button>
+        </div>
+    </div>
+
+    <!-- Terms Modal -->
+    <div id="termsModal" class="info-modal" onclick="if(event.target === this) hideTerms()">
+        <div class="info-content" onclick="event.stopImmediatePropagation()">
+            <h2>Terms & Conditions</h2>
+            <p><strong>Last updated: July 2026</strong></p>
+            <p style="margin-top:1rem; line-height:1.6; opacity:0.9;">
+                1. Users are fully responsible for their content.<br>
+                2. No hate speech, harassment, or illegal content.<br>
+                3. All messages are anonymous.<br>
+                4. We reserve the right to remove inappropriate content.
+            </p>
+            <button onclick="hideTerms()" style="width:100%; padding:16px; background:#4a9eff; border:none; border-radius:9999px; color:white; font-weight:600; margin-top:1.5rem;">Close</button>
+        </div>
+    </div>
+
+    <!-- Hero -->
+    <div class="hero">
+        <div class="logo" style="margin-bottom: 2rem;">
+            <img src="logo.png" alt="MBBS Anony" style="width: 80px; height: 80px;">
+            <h6 style="font-size: 2.6rem; font-weight: 700;">MBBS Anony</h6>
+        </div>
+        <h1>Say something you<br>can't say on the group.</h1>
+        <p class="tagline">Anonymous. Beautiful. Instant.</p>
+    </div>
+
+    <!-- Floating Action Button -->
+    <div class="fab" id="fab" onclick="toggleComposer()">
+        <span>+</span>
+    </div>
+
+    <!-- Composer Bottom Sheet -->
+    <div id="composerSheet" class="composer-sheet">
+        <div class="sheet-handle" onclick="toggleComposer()"></div>
+        <div class="glass-panel">
+            <textarea id="message" class="message-input" placeholder="What’s on your mind..."></textarea>
+            <div id="previews" class="attachments"></div>
+            
+            <div class="composer-footer">
+                <button onclick="triggerUpload()" class="btn btn-attach">+</button>
+                <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleFiles(this)">
+                
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <span id="counter" class="counter">0 / 500</span>
+                    <button onclick="sendMessage()" id="sendBtn" class="btn btn-send" disabled>
+                        Send →
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Config
+        const firebaseConfig = {
+          apiKey: "AIzaSyA3btj356PWk-s5G6-Mlt7FgU3gM5ekfJA",
+          authDomain: "mbbsanony.firebaseapp.com",
+          projectId: "mbbsanony",
+          storageBucket: "mbbsanony.firebasestorage.app",
+          messagingSenderId: "829193444298",
+          appId: "1:829193444298:web:3d84348ca32f99b8304d33"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // DOM Elements
+        const messageInput = document.getElementById('message');
+        const counter = document.getElementById('counter');
+        const sendBtn = document.getElementById('sendBtn');
+        const previewsContainer = document.getElementById('previews');
+        const composerSheet = document.getElementById('composerSheet');
+        const menuModal = document.getElementById('menuModal');
+        const hamburger = document.getElementById('hamburger');
+        const fab = document.getElementById('fab');
+
+        let selectedFile = null;
+        let isDragging = false;
+        let startY = 0;
+
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
+        const QUALITY = 0.78;
+
+        // Input counter
+        messageInput.addEventListener('input', () => {
+            let len = messageInput.value.length;
+            counter.textContent = `${len} / 500`;
+            if (len > 500) messageInput.value = messageInput.value.substring(0, 500);
+            updateSendButton();
+        });
+
+        function updateSendButton() {
+            const hasText = messageInput.value.trim().length > 0;
+            sendBtn.disabled = !(hasText || selectedFile);
+        }
+
+        function triggerUpload() {
+            document.getElementById('fileInput').click();
+        }
+
+        async function handleFiles(input) {
+            const file = input.files[0];
+            if (!file || !file.type.startsWith('image/')) return;
+            selectedFile = await compressImage(file);
+            previewsContainer.innerHTML = '';
+            renderPreview(selectedFile);
+            updateSendButton();
+        }
+
+        function compressImage(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        let {width, height} = img;
+                        const ratio = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height);
+                        if (ratio < 1) {
+                            width = Math.round(width * ratio);
+                            height = Math.round(height * ratio);
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width; 
+                        canvas.height = height;
+                        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                        canvas.toBlob(blob => {
+                            resolve(new File([blob], file.name, {type: 'image/jpeg', lastModified: Date.now()}));
+                        }, 'image/jpeg', QUALITY);
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function renderPreview(file) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                const div = document.createElement('div');
+                div.className = 'preview';
+                div.innerHTML = `<img src="${e.target.result}" alt="preview"><div class="preview-remove" onclick="removePreview()">×</div>`;
+                previewsContainer.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removePreview() {
+            selectedFile = null;
+            previewsContainer.innerHTML = '';
+            updateSendButton();
+        }
+
+        async function sendMessage() {
+            const text = messageInput.value.trim();
+            if (!text && !selectedFile) return;
+
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Sending...';
+
+            try {
+                let imageData = selectedFile ? [await fileToBase64(selectedFile)] : [];
+                await db.collection('messages').add({
+                    text: text || '',
+                    images: imageData,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                showSuccessToast();
+                resetForm();
+                toggleComposer();
+            } catch (e) {
+                console.error(e);
+                alert('Failed to send. Try again.');
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Send →';
+            }
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function resetForm() {
+            messageInput.value = '';
+            selectedFile = null;
+            previewsContainer.innerHTML = '';
+            counter.textContent = '0 / 500';
+            updateSendButton();
+        }
+
+        function showSuccessToast() {
+            const toast = document.createElement('div');
+            toast.className = 'success-toast';
+            toast.textContent = '✓ Message sent successfully';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+        }
+
+        // Composer Controls
+        function toggleComposer() {
+            composerSheet.classList.toggle('open');
+        }
+
+        // Menu Controls
+        function showMenu() {
+            menuModal.style.display = 'block';
+            setTimeout(() => menuModal.classList.add('open'), 10);
+        }
+
+        function hideMenu() {
+            const modal = menuModal;
+            modal.classList.remove('open');
+            setTimeout(() => modal.style.display = 'none', 400);
+        }
+
+        // Info Modal Controls
+        function showAbout() { 
+            document.getElementById('aboutModal').style.display = 'flex'; 
+        }
+        function hideAbout() { 
+            document.getElementById('aboutModal').style.display = 'none'; 
+        }
+
+        function showContactInfo() { 
+            document.getElementById('contactModal').style.display = 'flex'; 
+        }
+        function hideContact() { 
+            document.getElementById('contactModal').style.display = 'none'; 
+        }
+
+        function showSupportInfo() { 
+            document.getElementById('supportModal').style.display = 'flex'; 
+        }
+        function hideSupport() { 
+            document.getElementById('supportModal').style.display = 'none'; 
+        }
+
+        function showTerms() { 
+            document.getElementById('termsModal').style.display = 'flex'; 
+        }
+        function hideTerms() { 
+            document.getElementById('termsModal').style.display = 'none'; 
+        }
+
+        // Drag to close composer
+        composerSheet.addEventListener('touchstart', e => {
+            startY = e.touches[0].clientY;
+            isDragging = true;
+        });
+
+        composerSheet.addEventListener('touchmove', e => {
+            if (!isDragging) return;
+            const currentY = e.touches[0].clientY;
+            if (currentY > startY + 50) toggleComposer();
+        });
+
+        composerSheet.addEventListener('touchend', () => isDragging = false);
+
+        // Hamburger
+        hamburger.addEventListener('click', showMenu);
+
+        // Keyboard support
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && !e.shiftKey && document.activeElement.id === 'message') {
+                e.preventDefault();
+                if (!sendBtn.disabled) sendMessage();
+            }
+        });
+
+        // Initial state
+        updateSendButton();
+    </script>
+</body>
+</html>

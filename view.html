@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBBS ANONY</title>
+    
+    <!-- PWA Support -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4a9eff">
+    
+    <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-storage-compat.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
+        
+        :root {
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', system_ui, sans-serif;
+            background: #0a0a0f;
+            color: #fff;
+            min-height: 100vh;
+        }
+        
+        header {
+            padding: 1.5rem 1rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+        
+        .logo img {
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(74, 158, 255, 0.4);
+        }
+        
+        .login-screen {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        
+        .login-card {
+            background: var(--glass);
+            backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+            padding: 2.5rem 2rem;
+            width: 100%;
+            max-width: 380px;
+        }
+        
+        .messages-container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        
+        .message-card {
+            background: var(--glass);
+            backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+            overflow: hidden;
+            margin-bottom: 2.5rem;
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.3);
+            min-height: 520px; /* Ensures same height as image cards */
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .message-image {
+            width: 100%;
+            height: 380px;
+            object-fit: cover;
+            background: #111;
+        }
+        
+        .message-content {
+            padding: 1.5rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        /* Text-only cards get more breathing room */
+        .message-card.text-only .message-content {
+            padding: 2.5rem 1.5rem;
+        }
+        
+        .timestamp {
+            font-size: 0.85rem;
+            opacity: 0.6;
+            margin-bottom: 0.75rem;
+        }
+        
+        .message-text {
+            font-size: 1.15rem;
+            line-height: 1.65;
+            white-space: pre-wrap;
+        }
+        
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        
+        .modal img {
+            max-width: 94%;
+            max-height: 94vh;
+            border-radius: 16px;
+        }
+        
+        .empty {
+            text-align: center;
+            padding: 6rem 1rem;
+            opacity: 0.7;
+        }
+        
+        input {
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 16px;
+            color: white;
+            margin-bottom: 1rem;
+            font-size: 1.05rem;
+        }
+        
+        button {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(90deg, #4a9eff, #60a5fa);
+            border: none;
+            border-radius: 9999px;
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Simple Login Screen -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-card">
+            <div class="logo" style="margin-bottom: 2rem; justify-content: center;">
+                <img src="logo.png" alt="Whisper Logo">
+                <span>Mbbs Anony</span>
+            </div>
+            <h2 style="text-align:center; margin-bottom: 1.5rem;">Admin Access</h2>
+            
+            <input type="text" id="username" placeholder="Username" />
+            <input type="password" id="password" placeholder="Password" />
+            
+            <button onclick="attemptLogin()">Enter Archive</button>
+            <p id="loginError" style="color:#f87171; text-align:center; margin-top: 1rem; display:none;">Incorrect credentials</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="mainContent" style="display: none;">
+        <header>
+            <div class="logo">
+                <img src="logo.png" alt="ANONY Logo">
+                <span>MBBS ANONY</span>
+            </div>
+        </header>
+
+        <div class="messages-container" id="messagesContainer">
+            <!-- Messages loaded here -->
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div id="modal" class="modal" onclick="if(event.target === this) closeModal()">
+        <img id="modalImage" onclick="event.stopImmediatePropagation()">
+    </div>
+
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyA3btj356PWk-s5G6-Mlt7FgU3gM5ekfJA",
+          authDomain: "mbbsanony.firebaseapp.com",
+          projectId: "mbbsanony",
+          storageBucket: "mbbsanony.firebasestorage.app",
+          messagingSenderId: "829193444298",
+          appId: "1:829193444298:web:3d84348ca32f99b8304d33",
+          measurementId: "G-SJXFC148D3"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const VALID_USERNAME = "admin";
+        const VALID_PASSWORD = "mbbs123";
+
+        function attemptLogin() {
+            const user = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value.trim();
+            const errorEl = document.getElementById('loginError');
+
+            if (user === VALID_USERNAME && pass === VALID_PASSWORD) {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'block';
+                loadMessages();
+            } else {
+                errorEl.style.display = 'block';
+                setTimeout(() => errorEl.style.display = 'none', 3000);
+            }
+        }
+
+        async function loadMessages() {
+            const container = document.getElementById('messagesContainer');
+            container.innerHTML = '<div style="text-align:center; padding:4rem;">Loading whispers...</div>';
+            
+            try {
+                const snapshot = await db.collection('messages')
+                    .orderBy('timestamp', 'desc')
+                    .limit(30)
+                    .get();
+                
+                container.innerHTML = '';
+                
+                if (snapshot.empty) {
+                    container.innerHTML = `
+                        <div class="empty">
+                            <h2 style="font-size: 2rem; margin-bottom: 1rem;">No messages yet</h2>
+                            <p>The void is quiet.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const card = createMessageCard(data);
+                    container.appendChild(card);
+                });
+                
+            } catch (e) {
+                console.error(e);
+                container.innerHTML = `<div style="text-align:center; padding:4rem; color:#f87171;">Failed to load messages.</div>`;
+            }
+        }
+
+        function createMessageCard(data) {
+            const card = document.createElement('div');
+            card.className = 'message-card';
+            
+            let html = '';
+            
+            // Show image ONLY if it exists
+            if (data.images && data.images.length > 0) {
+                html += `<img src="${data.images[0]}" class="message-image" onclick="showImage('${data.images[0]}')">`;
+            } else {
+                card.classList.add('text-only');
+            }
+            
+            html += `<div class="message-content">`;
+            html += `<div class="timestamp">${formatTimestamp(data.timestamp)}</div>`;
+            
+            if (data.text) {
+                html += `<div class="message-text">${escapeHtml(data.text)}</div>`;
+            }
+            
+            html += `</div>`;
+            
+            card.innerHTML = html;
+            return card;
+        }
+
+        function formatTimestamp(ts) {
+            if (!ts) return 'Just now';
+            const date = ts.toDate ? ts.toDate() : new Date(ts);
+            const diff = Math.floor((Date.now() - date) / 1000);
+            
+            if (diff < 60) return 'Just now';
+            if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+            if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showImage(src) {
+            const modal = document.getElementById('modal');
+            document.getElementById('modalImage').src = src;
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && document.getElementById('loginScreen').style.display !== 'none') {
+                attemptLogin();
+            }
+        });
+
+        // PWA Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('✅ Service Worker registered'))
+                    .catch(err => console.log('❌ Service Worker registration failed:', err));
+            });
+        }
+    </script>
+</body>
+</html>

@@ -170,7 +170,7 @@
     <div id="loginScreen" class="login-screen">
         <div class="login-card">
             <div class="logo" style="margin-bottom: 2rem; justify-content: center;">
-                <img src="logo.png" alt="Whisper Logo">
+                <img src="logo.png" alt="Anony Logo">
                 <span>Mbbs Anony</span>
             </div>
             <h2 style="text-align:center; margin-bottom: 1.5rem;">Admin Access</h2>
@@ -178,7 +178,7 @@
             <input type="text" id="username" placeholder="Username" />
             <input type="password" id="password" placeholder="Password" />
             
-            <button onclick="attemptLogin()">Enter Archive</button>
+            <button onclick="attemptLogin()">Enter Anonyly</button>
             <p id="loginError" style="color:#f87171; text-align:center; margin-top: 1rem; display:none;">Incorrect credentials</p>
         </div>
     </div>
@@ -238,7 +238,7 @@
 
         function loadMessages() {
             const container = document.getElementById('messagesContainer');
-            container.innerHTML = '<div style="text-align:center; padding:4rem;">Loading whispers...</div>';
+            container.innerHTML = '<div style="text-align:center; padding:4rem;">Loading Anonys...</div>';
             
             // Unsubscribe from previous listener if exists
             if (unsubscribe) {

@@ -374,6 +374,7 @@
                 <a href="#" onclick="showAbout(); hideMenu()">About</a>
                 <a href="#" onclick="showContactInfo(); hideMenu()">Contact</a>
                 <a href="#" onclick="showSupportInfo(); hideMenu()">Support</a>
+                <a href="#" onclick="showDonate(); hideMenu()">Donate</a>
                 <a href="#" onclick="showTerms(); hideMenu()">Terms & Conditions</a>
                 
                 <button onclick="hideMenu()" style="width:100%; margin-top: 2.5rem; padding: 16px; background: rgba(255,255,255,0.1); border: none; border-radius: 9999px; color: white; font-size: 1.1rem;">
@@ -388,7 +389,7 @@
         <div class="info-content" onclick="event.stopImmediatePropagation()">
             <h2>About MBBS Anony</h2>
             <p style="margin: 1.5rem 0; line-height: 1.7; opacity: 0.9;">
-                MBBS Anony is a private, anonymous space created for medical students. 
+                MBBS Anony is a private, anonymous space created for 300lvl medical students. 
                 Share your thoughts, struggles, funny moments, or concerns without revealing your identity.
                 <br><br>
                 This platform is built to foster honest conversations within the MBBS community.
@@ -404,6 +405,9 @@
             <p style="margin: 1.5rem 0; line-height: 1.7; opacity: 0.9;">
                 For general inquiries, suggestions, or partnership:<br><br>
                 <strong>Email:</strong> the.anonymously.handler@gmail.com<br><br>
+                <strong>Whatsapp Nō:</strong> ‪+1 (909) 282‑7074‬<br><br>
+                <strong>Snapchat:</strong> ‪Coming Soon...‬<br><br>
+
                 We usually respond within 48 hours.
             </p>
             <button onclick="hideContact()" style="width:100%; padding:16px; background:#4a9eff; border:none; border-radius:9999px; color:white; font-weight:600;">Close</button>
@@ -419,7 +423,7 @@
                 • Messages not sending?<br>
                 • Image upload problems?<br>
                 • Want a new feature?<br><br>
-                <strong>Email:</strong> the.anonymously.handler@gmail.com<br><br>
+                <strong>Contact Us:</strong> At the Contact menu...<br><br>
                 Your feedback helps us improve the platform.
             </p>
             <button onclick="hideSupport()" style="width:100%; padding:16px; background:#4a9eff; border:none; border-radius:9999px; color:white; font-weight:600;">Close</button>
@@ -440,20 +444,32 @@
             <button onclick="hideTerms()" style="width:100%; padding:16px; background:#4a9eff; border:none; border-radius:9999px; color:white; font-weight:600; margin-top:1.5rem;">Close</button>
         </div>
     </div>
+    
+    <!-- Donate Modal -->
+    <div id="donateModal" class="info-modal" onclick="if(event.target === this) hideDonate()">
+        <div class="info-content" onclick="event.stopImmediatePropagation()">
+            <h2>Donate to MBBS Anony❤️</h2>
+            <p style="margin: 1.5rem 0; line-height: 1.7; opacity: 0.9;">
+                MBBS Anony admins will be please if you donate.<br><br>
+                Send us a DM if u will like to donate to us thank you in advance...There will be a shoutout to u anaonymously or openly thanks🥹
+            </p>
+            <button onclick="hideDonate()" style="width:100%; padding:16px; background:#4a9eff; border:none; border-radius:9999px; color:white; font-weight:600;">Close</button>
+        </div>
+    </div>
 
     <!-- Hero -->
     <div class="hero">
         <div class="logo" style="margin-bottom: 2rem;">
             <img src="logo.png" alt="MBBS Anony" style="width: 80px; height: 80px;">
-            <h6 style="font-size: 2.6rem; font-weight: 700;">MBBS Anony</h6>
+            <h2 style="font-size: 2.6rem; font-weight: 700;">MBBS Anony</h2>
         </div>
-        <h1>Say something you<br>can't say on the group.</h1>
-        <p class="tagline">Anonymous. Beautiful. Instant.</p>
+        <h3>Say something you<br>can't say on the group.</h3>
+        <p class="tagline">Anonymous. Save. Secure.</p>
     </div>
 
     <!-- Floating Action Button -->
     <div class="fab" id="fab" onclick="toggleComposer()">
-        <span>+</span>
+        <span>^</span>
     </div>
 
     <!-- Composer Bottom Sheet -->
@@ -468,7 +484,7 @@
                 <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleFiles(this)">
                 
                 <div style="display: flex; align-items: center; gap: 20px;">
-                    <span id="counter" class="counter">0 / 500</span>
+                    <span id="counter" class="counter">0 / 1000</span>
                     <button onclick="sendMessage()" id="sendBtn" class="btn btn-send" disabled>
                         Send →
                     </button>
@@ -509,11 +525,14 @@
         const MAX_HEIGHT = 800;
         const QUALITY = 0.78;
 
-        // Input counter
+        // Input counter - FIXED
         messageInput.addEventListener('input', () => {
             let len = messageInput.value.length;
-            counter.textContent = `${len} / 500`;
-            if (len > 500) messageInput.value = messageInput.value.substring(0, 500);
+            counter.textContent = `${len} / 1000`;
+            if (len > 1000) {
+                messageInput.value = messageInput.value.substring(0, 1000);
+                counter.textContent = `1000 / 1000`;
+            }
             updateSendButton();
         });
 
@@ -617,7 +636,7 @@
             messageInput.value = '';
             selectedFile = null;
             previewsContainer.innerHTML = '';
-            counter.textContent = '0 / 500';
+            counter.textContent = '0 / 1000';
             updateSendButton();
         }
 
@@ -673,6 +692,13 @@
         }
         function hideTerms() { 
             document.getElementById('termsModal').style.display = 'none'; 
+        }
+
+        function showDonate() { 
+            document.getElementById('donateModal').style.display = 'flex'; 
+        }
+        function hideDonate() { 
+            document.getElementById('donateModal').style.display = 'none'; 
         }
 
         // Drag to close composer

@@ -1,9 +1,9 @@
-const CACHE_NAME = 'mbbs-anony-v3';
+const CACHE_NAME = 'mbbs-anony-v4';
 
 const urlsToCache = [
-  './view.html',            // Main file (updated)
+  './view.html',           // Main starting page
   './manifest.json',
-  './logo.png',             // Your logo
+  './logo.png',
   'https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js',
   'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js'
 ];
@@ -12,57 +12,50 @@ const urlsToCache = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Cache opened');
-        return cache.addAll(urlsToCache);
-      })
+      .then(cache => cache.addAll(urlsToCache))
+      .then(() => self.skipWaiting())
   );
 });
 
-// Activate - Clean old caches
+// Activate
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(cacheNames => {
+    caches.keys().then(keys => {
       return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
+        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
       );
-    })
+    }).then(() => self.clients.claim())
   );
 });
 
-// Fetch
+// Fetch - Stronger caching for start_url
 self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+
   event.respondWith(
     caches.match(event.request)
-      .then(cachedResponse => {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
+      .then(cached => {
+        if (cached) return cached;
 
         return fetch(event.request)
-          .then(networkResponse => {
-            // Cache successful responses (except Firebase)
-            if (networkResponse && networkResponse.status === 200 && !event.request.url.includes('firebase')) {
-              const responseClone = networkResponse.clone();
-              caches.open(CACHE_NAME).then(cache => {
-                cache.put(event.request, responseClone);
-              });
+          .then(response => {
+            // Cache important files
+            if (response.ok && 
+                (url.pathname.endsWith('.html') || 
+                 url.pathname.endsWith('.json') || 
+                 url.pathname.endsWith('.png') ||
+                 url.pathname.includes('firebase'))) {
+              const responseClone = response.clone();
+              caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
             }
-            return networkResponse;
+            return response;
           })
           .catch(() => {
-            // Offline fallback
+            // Offline - always serve view.html for navigation
             if (event.request.destination === 'document') {
               return caches.match('./view.html');
             }
-            return new Response('You are offline', { 
-              status: 503, 
-              statusText: 'Service Unavailable' 
-            });
+            return new Response('Offline', { status: 503 });
           });
       })
   );
